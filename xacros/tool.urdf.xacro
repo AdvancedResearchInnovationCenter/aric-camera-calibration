@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<robot name="end_effector" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <link name="davis"/>
+    <link name="pressure_ft"/>
+    <link name="TCP"/>
+
+    <joint name="TCP_to_cam" type="fixed">
+        <parent link="TCP"/>
+        <child link="davis"/>
+	    <origin xyz="-0.10126922 0.07627988 0.11786909" rpy="-1.56978981 -0.02018286 0.04749861"/>
+    </joint>
+
+    <joint name="TCP_to_pressure_ft" type="fixed">
+        <parent link="TCP"/>
+        <child link="pressure_ft"/>
+	    <origin xyz="0.10418 0.10444 0.07405" rpy="1.54924 -0.00049 2.35537"/>
+    </joint>
+
+</robot>

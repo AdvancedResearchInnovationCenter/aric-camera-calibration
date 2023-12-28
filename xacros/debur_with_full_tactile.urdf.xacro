@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<robot name="debur_end_effector" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <link name="davis"/>
+    <link name="pressure_ft"/>
+    <link name="tactile_surface"/>
+    <link name="TCP"/>
+
+    <joint name="TCP_to_cam" type="fixed">
+        <parent link="TCP"/>
+        <child link="davis"/>
+	    <origin xyz="-0.084363 0.07636588 0.11668644" rpy="-1.6191409 0.0151598 0.0068846"/>
+    </joint>
+
+    <joint name="TCP_to_pressure_ft" type="fixed">
+        <parent link="TCP"/>
+        <child link="pressure_ft"/>
+	    <origin xyz="-0.084363 0.07636588 0.11668644" rpy="-1.6191409 0.0151598 0.0068846"/>
+    </joint>
+
+    <joint name="tactile_cam_to_tactile" type="fixed">
+        <parent link="davis"/>
+        <child link="tactile_surface"/>
+	    <origin xyz="-0.0020 -0.0023 0.0869" rpy="-0.01801  0.0024875  0.0069731"/>
+    </joint>
+
+</robot>
+

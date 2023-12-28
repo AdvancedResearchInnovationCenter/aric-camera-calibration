@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+<robot name="end_effector" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <link name="davis"/>
+    <!-- <link name="d435"/> -->
+    <link name="pressure_ft"/>
+    <!-- <link name="scancontrol"/> -->
+    <!-- <link name="scancontrol_intermediate"/> -->
+    <link name="TCP"/>
+    <!-- <link name="camera_sensor_calib"/>
+    <link name="d435_calib"/> -->
+
+    <!-- <joint name="TCP_to_cam" type="fixed">
+        <parent link="TCP"/>
+        <child link="davis"/> -->
+	    <!-- <origin xyz="-0.09035842 0.01353829 0.02292685" rpy="1.55807254 -0.77464088 -0.01081955"/> -->
+	    <!-- <origin xyz="-0.09035842 0.01353829 0.02292685" rpy="1.55807254 -0.77464088 -0.01081955"/> -->
+	    <!-- <origin xyz="-0.09035842 0.01353829 0.02292685" rpy="1.55807254 -0.77464088 -0.01081955"/> -->
+	    <!-- <origin xyz="-0.09035842 0.01353829 0.02292685" rpy="1.56170309  0.00191945 -0.77469880000000000000000000000000000000000000"/> -->
+	    <!-- <origin xyz="-0.12453176  0.13852048  0.06796298" rpy="1.55700783  0.01272717 -2.38667828"/> -->
+	    <!-- <origin xyz="-0.05275792 0.02838982 0.15275118" rpy="-0.0044183 0.0010221 -1.5668429"/> -->
+    <!-- </joint> -->
+
+    <joint name="TCP_to_ov7521" type="fixed">
+        <parent link="TCP"/>
+        <child link="davis"/>
+	    <origin xyz="0 0 0.135" rpy="0 0 3.14159"/>
+	    <!-- <origin xyz="-0.14088146  0.10864803  0.07998699" rpy="3.13000238 -0.01290779  2.33399465"/> -->
+    </joint>
+
+    <!-- <joint name="TCP_to_d435_calib" type="fixed">
+        <parent link="TCP"/>
+        <child link="d435_calib"/>
+	    <origin xyz="-0.14088146  0.10864803  0.07998699" rpy="3.13000238 -0.01290779  2.33399465"/>
+    </joint> -->
+
+    <!-- <joint name="TCP_to_cam_sensor_calib" type="fixed">
+        <parent link="TCP"/>
+        <child link="camera_sensor_calib"/>
+	    <origin xyz="-0.12453176  0.13852048  0.06796298" rpy="1.55700783  0.01272717 -2.38667828"/>
+    </joint> -->
+
+    <!-- <joint name="TCP_to_laser" type="fixed">
+        <parent link="TCP"/>
+        <child link="scancontrol_intermediate"/>
+	    <origin xyz="0.0 0.1 0.15275118" rpy="-0.0044183 0.0010221 -1.5668429"/>
+    </joint> -->
+
+    <!-- <joint name="exact_laser_transform" type="fixed">
+        <parent link="scancontrol_intermediate"/>
+        <child link="scancontrol"/>
+	    <origin xyz="0.0 0.0 0.5" rpy="0.0 3.14 0.0"/>
+    </joint> -->
+
+    <joint name="TCP_to_pressure_ft" type="fixed">
+        <parent link="TCP"/>
+        <child link="pressure_ft"/>
+	    <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+</robot>
+
+
+<!-- <origin xyz="-0.05 -0.025 0.08" rpy="0 0 -1.5707963"/> -->

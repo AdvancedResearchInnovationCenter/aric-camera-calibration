@@ -1,0 +1,25 @@
+{
+    "robot": {
+        "name": "UR10",
+        "ip": "192.168.50.110"
+    },
+    "calibration_target": {
+        "type": "charuco",
+        "size": [11,8],
+        "checker_length": 0.022,
+        "marker_length": 0.016,
+        "legacy_pattern": true,
+        "aruco_dict": "DICT_4X4_250",
+        "blur":[11,2],
+        "target2base": [[-1, 0,  0, 0.055],
+                        [ 0, 1,  0, -0.53],
+                        [ 0, 0, -1,     0],
+                        [ 0, 0,  0,     1]]
+    },
+    "calibration_data": {
+        "project_name": "tactile_ov7521_3",
+        "image_topic": "/ardu_cam/image_raw",
+        "data_collection_setup": [0.4, 5, 2, 0.10, 0.15],
+        "output_file_name": "tactile_ov7521_333333333333333333333"
+    }
+}
