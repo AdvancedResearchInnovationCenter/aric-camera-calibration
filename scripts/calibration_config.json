@@ -9,7 +9,7 @@
         "checker_length": 0.022,
         "marker_length": 0.016,
         "legacy_pattern": true,
-        "aruco_dict": "DICT_4X4_250",
+        "aruco_dict": "DICT_4X4_100",
         "blur":[11,2],
         "target2base": [[-1, 0,  0, 0.055],
                         [ 0, 1,  0, -0.53],
@@ -17,9 +17,10 @@
                         [ 0, 0,  0,     1]]
     },
     "calibration_data": {
-        "project_name": "tactile_ov7521_3",
+        "project_name": "tactile_ov7521_final",
         "image_topic": "/ardu_cam/image_raw",
-        "data_collection_setup": [0.4, 5, 2, 0.10, 0.15],
-        "output_file_name": "tactile_ov7521_333333333333333333333"
+        "data_collection_setup": [0.4, 5, 20, 0.10, 0.15],
+        "output_file_name": "tactile_ov7521_final",
+        "use_existing_data": false
     }
 }

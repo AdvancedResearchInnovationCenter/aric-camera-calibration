@@ -3,23 +3,13 @@
 import json
 import pathlib
 import numpy as np
-import cv2, PIL, os
+import cv2
+import os
 from cv2 import aruco
-from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
-import matplotlib as mpl
 from scipy.spatial.transform import Rotation
-from aruco_dict import *
-import pickle
+from utils import *
 
-RST = '\033[0m'     # white (normal)
-RED = '\033[31m'    # red
-GRN = '\033[32m'    # green
-ORN = '\033[33m'    # orange
-BLU = '\033[34m'    # blue
-YLW = '\033[93m'    # yellow
-PRL = '\033[35m'    # purple
-BLD = '\033[1m'     # bold
 class CameraCalibrator:
     def get_abs_data_dir(self):
             return str(
@@ -173,7 +163,9 @@ class CameraCalibrator:
         Calibrates the camera using the detected corners.
         """
         self.read_charuco_board()
-        print(BLU + "INTRINSIC CAMERA CALIBRATION" + RST)
+        print("+------------------------------+")
+        print(f'|{BLU} INTRINSIC CAMERA CALIBRATION {RST}|')
+        print("+------------------------------+")
 
         cameraMatrixInit = np.array(
             [
@@ -205,11 +197,13 @@ class CameraCalibrator:
             criteria=criteria,
         )
         np.set_printoptions(suppress=True)
-        print(GRN + "Reprojection Error: " + RST + f"{self.reprojection_error}")
-        print(GRN + "Camera Matrix" + RST)
-        print(self.camera_matrix)
-        print(GRN + "Distortion Coefficients" + RST)
-        print([c[0].tolist() for c in self.distortion_coefficients])
+        print(f'* {GRN}Reprojection Error:{RST} {self.reprojection_error}')
+        print(f'* {GRN}Camera Matrix{RST}')
+        print(f'  {self.camera_matrix[0]}')
+        print(f'  {self.camera_matrix[1]}')
+        print(f'  {self.camera_matrix[2]}')
+        print(f'* {GRN}Distortion Coefficients{RST}')
+        print("  " + str([c[0].tolist() for c in self.distortion_coefficients]))
         print()
         
     def my_estimatePoseSingleMarkers(self, corners, marker_length, mtx, distortion):
@@ -243,7 +237,7 @@ class CameraCalibrator:
         return rvec, tvec, retval
 
     def get_cam_T_target_poses(self, rvecs: list = [], tvecs: list = []):
-        print(BLU + "CALCULATING cam_T_target POSES" + RST)
+        # print(BLU + "CALCULATING cam_T_target POSES" + RST)
         
         if len(rvecs) == 0 or len(tvecs) == 0:
             method = 'cv2.aruco.estimatePoseCharucoBoard'
@@ -265,7 +259,7 @@ class CameraCalibrator:
                 R_cam_board = Rotation.from_rotvec(rotv_cam_board)
                 matrix_cam_board = np.matmul(R_cam_board.as_matrix(), charuco_correction_matrix)
                 self.cam_T_target.append(np.vstack([np.c_[matrix_cam_board, p_cam_board], [0, 0, 0, 1]]))
-            print(f'# of cam_T_target Poses {len(self.cam_T_target)}')
+            # print(f'# of cam_T_target Poses {len(self.cam_T_target)}')
             
         elif method == 'cv2.aruco.calibrateCameraCharucoExtended':
             for i in range(len(self.images)):
@@ -274,16 +268,16 @@ class CameraCalibrator:
                 R_cam_board = Rotation.from_rotvec(rotv_cam_board)
                 matrix_cam_board = np.matmul(R_cam_board.as_matrix(), charuco_correction_matrix)
                 self.cam_T_target.append(np.vstack([np.c_[matrix_cam_board, p_cam_board], [0, 0, 0, 1]]))
-            print(f'# of cam_T_target Poses: {len(self.cam_T_target)}')
-        print()
+            # print(f'# of cam_T_target Poses: {len(self.cam_T_target)}')
+        # print()
         
     def get_base_T_tcp_poses(self):
-        print(BLU + "GETTING base_T_tcp POSES" + RST)
+        # print(BLU + "GETTING base_T_tcp POSES" + RST)
         self.base_T_tcp = []
         for key in self.pose_data.keys():
             self.base_T_tcp.append(self.pose_data[key]['ee_pose'])
-        print(f'# of TCP to Base Poses: {len(self.base_T_tcp)}')
-        print()
+        # print(f'# of TCP to Base Poses: {len(self.base_T_tcp)}')
+        # print()
 
     def solve_transform(self, X, Y):
 
@@ -420,7 +414,9 @@ class CameraCalibrator:
         self.get_cam_T_target_poses()
         self.get_base_T_tcp_poses()
 
-        print(BLU + "EXTRINSIC CAMERA CALIBRATION" + RST)
+        print("+------------------------------+")
+        print(f'|{BLU} EXTRINSIC CAMERA CALIBRATION {RST}|')
+        print("+------------------------------+")
         if method == 'ARIC':
             initial_translation = np.array([0.0, 0.1, 0.1]).reshape(3,-1)
             initial_matrix = np.array([[-1,  0, 0],
@@ -437,8 +433,8 @@ class CameraCalibrator:
             for i in range(len(self.cam_T_target)):
                 R_C.append(self.cam_T_target[i][:3,:3])
                 t_C.append(self.cam_T_target[i][:3,3])
-                R_B.append(self.base_T_tcp[i][:3,:3])
-                t_B.append(self.base_T_tcp[i][:3,3])
+                R_B.append(np.array(self.base_T_tcp)[i][:3,:3])
+                t_B.append(np.array(self.base_T_tcp)[i][:3,3])
             R_C = np.array(R_C)
             t_C = np.array(t_C)
             R_B = np.array(R_B)
@@ -446,8 +442,11 @@ class CameraCalibrator:
             rotation_mat, translation_vec = cv2.calibrateHandEye(R_B, t_B, R_C, t_C)
             self.tcp_T_cam = np.vstack([np.c_[rotation_mat, translation_vec], [0, 0, 0, 1]])
 
-        print(YLW + "tcp_T_cam" + RST)
-        print(self.tcp_T_cam)
+        print(f'* {GRN}tcp_T_cam{RST}')
+        print(f'  {self.tcp_T_cam[0]}')
+        print(f'  {self.tcp_T_cam[1]}')
+        print(f'  {self.tcp_T_cam[2]}')
+        print(f'  {self.tcp_T_cam[3]}')
         rot_mat = self.tcp_T_cam[0:3,0:3]
         translation = self.tcp_T_cam[0:3,3]
         r =  Rotation.from_matrix(rot_mat)
@@ -458,14 +457,10 @@ class CameraCalibrator:
         # print("Rotation Matrix")
         # print(rot_mat)
         print()
-        print(YLW + "Translation" + RST)
-        print(translation)
+        print(f'* {GRN}Translation{RST}')
+        print("  " + str(translation))
         print()
-        print(YLW + "Euler Angles (ZYX)" + RST)
-        print(GRN + '(rad) ' + RST + BLD + 'X: '+ RST + f'{angles[0]}\t' + \
-             BLD + 'Y: ' + RST + f'{angles[1]}\t' + \
-                BLD + 'Z: ' + RST + f'{angles[2]}' + RST)
-        print(GRN + '(deg) ' + RST + BLD + 'X: '+ RST + f'{angles_degrees[0]}\t' + \
-             BLD + 'Y: ' + RST + f'{angles_degrees[1]}\t' + \
-                BLD + 'Z: ' + RST + f'{angles_degrees[2]}' + RST)
+        print(f'* {GRN}Euler Angles (ZYX){RST}')
+        print(f'  {YLW}(rad){RST} {BLD}X: {RST}{angles[0]}\t{BLD}Y: {RST}{angles[1]}\t{BLD}Z: {RST}{angles[2]}{RST}')
+        print(f'  {YLW}(deg){RST} {BLD}X: {RST}{angles_degrees[0]}\t{BLD}Y: {RST}{angles_degrees[1]}\t{BLD}Z: {RST}{angles_degrees[2]}{RST}')
         print()

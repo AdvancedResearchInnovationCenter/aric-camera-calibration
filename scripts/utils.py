@@ -1,5 +1,14 @@
 import cv2
 
+RST = '\033[0m'     # white (normal)
+RED = '\033[31m'    # red
+GRN = '\033[32m'    # green
+ORN = '\033[33m'    # orange
+BLU = '\033[34m'    # blue
+YLW = '\033[93m'    # yellow
+PRL = '\033[35m'    # purple
+BLD = '\033[1m'     # bold
+
 ARUCO_DICT = {
 	"DICT_4X4_50": cv2.aruco.DICT_4X4_50,
 	"DICT_4X4_100": cv2.aruco.DICT_4X4_100,

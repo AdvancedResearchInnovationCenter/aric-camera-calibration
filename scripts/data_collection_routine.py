@@ -4,11 +4,8 @@ import numpy as np
 # import urx
 import cv2
 from cv2 import aruco
-import sys
-import pickle
 import os
 import math
-import time
 import rospy
 from scipy.spatial.transform import Rotation as R
 from cv_bridge import CvBridge
@@ -20,21 +17,10 @@ from ur_rtde import UrRtde
 from abb_ros import AbbRobot
 import random
 import copy
-from aruco_dict import *
-import rospkg
+from utils import *
 # from mitsubishi_ros import MitsubishiRobot
-import argparse
 import pathlib
 from PIL import Image as PIL_Image
-
-
-RST  = '\033[0m'  # white (normal)
-RED  = '\033[31m' # red
-GRN  = '\033[32m' # green
-ORN  = '\033[33m' # orange
-BLU  = '\033[34m' # blue
-PRL  = '\033[35m' # purple
-
 
 class CameraCalibrationDataCollection:
     def json_file_to_dict(self, calibration_config_file: str) -> dict:
@@ -47,8 +33,7 @@ class CameraCalibrationDataCollection:
             print(e)
             print(RED + "Error: Config file '" + calibration_config_file + "' not found." + RST)
             exit()
-        
-        
+            
     def load_calibration_config(self, calibration_config_file: str) -> dict:
         ## LOAD CALIBRATION CONFIGURATION DATA
         self.calibration_config = self.json_file_to_dict(calibration_config_file)
@@ -76,20 +61,24 @@ class CameraCalibrationDataCollection:
         self.calibration_data_dir_abs = str(pathlib.Path(
             os.path.join(os.path.dirname(__file__), self.calibration_data_dir_relative)
             ).resolve())
+        
         self.ros_image_topic = self.calibration_config['calibration_data']['image_topic']
         self.data_collection_setup = self.calibration_config['calibration_data']['data_collection_setup']
         self.dump_file_name = self.calibration_config['calibration_data']['output_file_name']# + "_" + datetime.now().strftime("%Y-%m-%d-%H-%M") + '.json'
-        
         self.calibration_config['calibration_data'].update({'output_file_name': self.dump_file_name})
         self.calibration_config['calibration_data'].update({'data_relative_dir': self.calibration_data_dir_relative})
+        self.images_dir_abs = os.path.join(self.calibration_data_dir_abs, "images")
+        self.images_dir_relative = os.path.join(self.calibration_data_dir_relative, "images")
         
         if not os.path.exists(self.calibration_data_dir_abs):
             os.makedirs(self.calibration_data_dir_abs)
-        if not os.path.exists(os.path.join(self.calibration_data_dir_abs, "images")):
-            os.makedirs(os.path.join(self.calibration_data_dir_abs, "images"))
-            
-        verbose = False
+        
+        if not os.path.exists(self.images_dir_abs):
+            os.makedirs(self.images_dir_abs)
+        
+        verbose = True
         if verbose:
+            print('--------------------------------------------------------')
             print(f'########  R O B O T   I N F O  ########')
             print(f'           robot_name: {self.robot_name}')
             print(f'             robot_ip: {self.robot_ip}')
@@ -111,24 +100,39 @@ class CameraCalibrationDataCollection:
             print(f'                 blur: {self.blur}')
             print(f'        base_T_target: {self.base_T_target}')
             print(f'    target_aruco_dict: {self.target_aruco_dict}')
+            print('--------------------------------------------------------')
+            
+        # check if the directory already has images
+        self.use_existing_data = False #self.calibration_config['calibration_data']['use_existing_data']# + "_" + datetime.now().strftime("%Y-%m-%d-%H-%M") + '.json'
+        self.data_collected = False
+
+        num_imgs = len(os.listdir(self.images_dir_abs))
+        if num_imgs:
+            print(f"{ORN}Directory '{self.images_dir_abs}' already contains {num_imgs} images. Consider taking a back up in case you need them. Proceeding will overwrite existing images.{RST}")
+            if input("Proceed to collecting new images? [Y/N]").lower() == 'n':
+                print("Existing images will be used for calibration ...")
+                self.use_existing_data = True
+                self.data_collected = True
+            
+        
         return self.calibration_config
         
     def __init__(self, calibration_config_file: str):#, calibration_file, mode='auto'):
-        print('---------------------------------------')
         ## LOAD CALIBRATION CONFIGURATION DATA
         self.calibration_config = self.load_calibration_config(calibration_config_file)
         
         # exit()
-        # if self.robot_name == 'UR10':
-        #     self.robot = RosRobot(UrRtde(self.robot_ip))
-        # elif self.robot_name == 'ABB':
-        #     self.robot = RosRobot(AbbRobot(self.robot_ip))
-        # elif self.robot_name == 'Mitsubishi':
-        #     print('self.robot = RosRobot(MitsubishiRobot(self.robot_ip))')
-        #     pass
-        # else:
-        #     print("No robot selected. Exiting...")
-        #     exit()
+        if self.robot_name == 'UR10':
+            self.robot = RosRobot(UrRtde(self.robot_ip))
+        elif self.robot_name == 'ABB':
+            self.robot = RosRobot(AbbRobot(self.robot_ip))
+        elif self.robot_name == 'Mitsubishi':
+            #TODO: Add support for mitsubishi robot
+            print('self.robot = RosRobot(MitsubishiRobot(self.robot_ip))')
+            pass
+        else:
+            print("No robot selected. Exiting...")
+            exit()
         
         self.cv_bridge = CvBridge()
         self.image_markers_publisher = rospy.Publisher(
@@ -190,18 +194,27 @@ class CameraCalibrationDataCollection:
         # self.calibration_data_dir_relative = os.path.join(os.path.dirname(__file__), self.calibration_data_dir_relative)
         self.calibration_poses = []  # camera poses relative to aruco board
         self.setup_calibration_poses()
-        self.data_collected = False
 
-    def save_to_json_file(self, data_object, file_name):
+    def save_to_json_file(self, data_object, file_name: str):
+        if not file_name.endswith('.json'):
+            file_name = file_name + '.json'
+            
         json_string = json.dumps(data_object, ensure_ascii=False, indent=4)
-        with open(os.path.join(self.calibration_data_dir_abs, file_name), 'w', encoding='utf-8') as f:
+        file_path = os.path.join(self.calibration_data_dir_relative, file_name)
+        
+        with open(file_path, 'w', encoding='utf-8') as f:
             f.write(json_string)
+        
         # f.close()
         rospy.loginfo("JSON file saved! %s", os.path.join(self.calibration_data_dir_abs, file_name))
 
     def save_image(self, image_name: str, frame: np.ndarray):
-        cv2.imwrite(os.path.join(self.calibration_data_dir_relative, 'images', image_name), frame)
-        rospy.loginfo("Image saved! %s", os.path.join(self.calibration_data_dir_abs, 'images', image_name))
+        if not image_name.endswith(".png"):
+            image_name = image_name + ".png"
+            
+        cv2.imwrite(os.path.join(self.images_dir_relative, image_name), frame)
+        rospy.loginfo("Image saved! %s", os.path.join(self.images_dir_abs, image_name))
+        # rospy.loginfo("Image saved! %s", image_name)
 
     def get_image_info(self, image):
         try:
@@ -296,7 +309,7 @@ class CameraCalibrationDataCollection:
             '\033[32mFound {} arucos. Moving to next pose.\033[0m'.format(len(markerIds)))
         # Outline the aruco markers found in our query image
         # print(markerIds)
-        print(f'# of markers: {len(markerIds)}')
+        # print(f'# of markers: {len(markerIds)}')
         draw_and_publish_markers(rgb_ros_image, markerCorners, markerIds)
         
         return gray_cv_image
@@ -310,7 +323,7 @@ class CameraCalibrationDataCollection:
 
     def collect_data(self):
         self.robot.kinematics.set_transform(
-            'ur_base', self.target_type, self.base_T_target, mode='static')
+            'ur_base', self.target_type, np.array(self.base_T_target), mode='static')
         self.robot.kinematics.set_transform(
             self.target_type, 'next_cam_pose', self.calibration_poses[0], mode='static')
         input("Check rviz, then proceed ...")
@@ -323,7 +336,7 @@ class CameraCalibrationDataCollection:
                 for j in range(target_pose.shape[1]):
                     target_pose[i, j] = round(target_pose[i, j], 4)
 
-            print('Target pose:', target_pose)
+            # print('Target pose:', target_pose)
 
             self.robot.kinematics.set_transform(
                 self.target_type, 'next_cam_pose', target_pose, mode='static')
@@ -346,11 +359,11 @@ class CameraCalibrationDataCollection:
             current_ee_transformation = np.vstack(
                 [np.c_[current_EE_rot, current_EE_tvec.reshape(3, -1)], [0, 0, 0, 1]])
 
-            image_name = os.path.join(self.calibration_data_dir_relative, str(self.data_counter) + '.png')
+            image_name = str(self.data_counter) + '.png'
 
             self.calibration_data_list.update(
                 {'data_sample_' + str(self.data_counter): {'ee_pose': current_ee_transformation.tolist(),
-                                                           'image': image_name}
+                                                           'image': os.path.join(self.images_dir_relative,image_name)}
                  }
                 )
 
@@ -358,6 +371,7 @@ class CameraCalibrationDataCollection:
             self.save_image(image_name, gray_cv_image)
             self.save_to_json_file(self.calibration_data_list, self.dump_file_name)
             self.data_counter += 1
+            # input("continue")
         
         if len(self.calibration_data_list) == len(self.calibration_poses):
             self.data_collected = True
