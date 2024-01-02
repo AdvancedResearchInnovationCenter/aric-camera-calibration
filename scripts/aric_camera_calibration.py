@@ -208,7 +208,7 @@ class CameraCalibrator:
         print("  " + str([c[0].tolist() for c in self.distortion_coefficients]))
         print()
         
-        with open(self.calibration_results_dir, 'a') as file:
+        with open(self.calibration_results_dir, 'w') as file:
             file.write("\n")
             file.write("+------------------------------+\n")
             file.write("| INTRINSIC CAMERA CALIBRATION |\n")
