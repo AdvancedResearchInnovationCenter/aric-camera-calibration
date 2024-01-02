@@ -11,7 +11,7 @@ from scipy.spatial.transform import Rotation
 from utils import *
 
 class CameraCalibrator:
-    def get_abs_data_dir(self):
+    def get_abs_images_dir(self):
             return str(
                 pathlib.Path(
                     os.path.join(
@@ -40,7 +40,7 @@ class CameraCalibrator:
         
         # params
         self.workdir = ""
-        self.datadir = self.get_abs_data_dir()
+        self.datadir = self.get_abs_images_dir()
 
         self.pose_data_file = os.path.join(
             self.datadir[:self.datadir.find('images')], 
@@ -109,7 +109,9 @@ class CameraCalibrator:
         self.cam_T_target = []
         self.base_T_tcp = []
         self.tcp_T_cam = []
-
+        self.calibration_results = None
+        self.calibration_results_dir = str(pathlib.Path(os.path.join(self.datadir, '..', 'calibration_results.txt')).resolve())
+        
     def read_charuco_board(self):
         """
         Charuco board pose estimation.
@@ -205,6 +207,21 @@ class CameraCalibrator:
         print(f'* {GRN}Distortion Coefficients{RST}')
         print("  " + str([c[0].tolist() for c in self.distortion_coefficients]))
         print()
+        
+        with open(self.calibration_results_dir, 'a') as file:
+            file.write("\n")
+            file.write("+------------------------------+\n")
+            file.write("| INTRINSIC CAMERA CALIBRATION |\n")
+            file.write("+------------------------------+\n")
+            file.write(f"* Reprojection Error: {self.reprojection_error}\n")
+            file.write("* Camera Matrix\n")
+            file.write(f"  {self.camera_matrix[0]}\n")
+            file.write(f"  {self.camera_matrix[1]}\n")
+            file.write(f"  {self.camera_matrix[2]}\n")
+            file.write("* Distortion Coefficients\n")
+            file.write("  " + str([c[0].tolist() for c in self.distortion_coefficients]))
+            file.write("\n")
+            
         
     def my_estimatePoseSingleMarkers(self, corners, marker_length, mtx, distortion):
         """
@@ -464,3 +481,20 @@ class CameraCalibrator:
         print(f'  {YLW}(rad){RST} {BLD}X: {RST}{angles[0]}\t{BLD}Y: {RST}{angles[1]}\t{BLD}Z: {RST}{angles[2]}{RST}')
         print(f'  {YLW}(deg){RST} {BLD}X: {RST}{angles_degrees[0]}\t{BLD}Y: {RST}{angles_degrees[1]}\t{BLD}Z: {RST}{angles_degrees[2]}{RST}')
         print()
+
+        with open(self.calibration_results_dir, 'a') as file:
+            file.write("\n")
+            file.write("+------------------------------+\n")
+            file.write("| EXTRINSIC CAMERA CALIBRATION |\n")
+            file.write("+------------------------------+\n")
+            file.write("* tcp_T_cam\n")
+            file.write(f'  {self.tcp_T_cam[0]}\n')
+            file.write(f'  {self.tcp_T_cam[1]}\n')
+            file.write(f'  {self.tcp_T_cam[2]}\n')
+            file.write(f'  {self.tcp_T_cam[3]}\n')
+            file.write("* Translation\n")
+            file.write("  " + str(translation) + '\n')
+            file.write(f'* Euler Angles (ZYX)\n')
+            file.write(f'  (rad) X: {angles[0]}\tY: {angles[1]}\tZ: {angles[2]}\n')
+            file.write(f'  (deg) X: {angles_degrees[0]}\tY: {angles_degrees[1]}\tZ: {angles_degrees[2]}\n')
+        
