@@ -1,0 +1,32 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/osama/visual_servoing_ws/devel/include/**",
+        "/opt/ros/noetic/include/**",
+        "/home/osama/visual_servoing_ws/src/rpg_dvs_ros/davis_ros_driver/include/**",
+        "/home/osama/visual_servoing_ws/src/image_pipeline/depth_image_proc/include/**",
+        "/home/osama/visual_servoing_ws/src/rpg_dvs_ros/dvs_calibration/include/**",
+        "/home/osama/visual_servoing_ws/src/dvs_meanshift/include/**",
+        "/home/osama/visual_servoing_ws/src/rpg_dvs_ros/dvs_renderer/include/**",
+        "/home/osama/visual_servoing_ws/src/rpg_dvs_ros/dvs_ros_driver/include/**",
+        "/home/osama/visual_servoing_ws/src/Meanshift-clustering/include/**",
+        "/home/osama/visual_servoing_ws/src/rpg_dvs_ros/dvxplorer_ros_driver/include/**",
+        "/home/osama/visual_servoing_ws/src/image_pipeline/image_proc/include/**",
+        "/home/osama/visual_servoing_ws/src/image_pipeline/stereo_image_proc/include/**",
+        "/home/osama/visual_servoing_ws/src/universal_robot/ur_kinematics/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}

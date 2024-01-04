@@ -1,16 +1,16 @@
 <?xml version="1.0"?>
 <launch>
-	<arg name="calibration_config" default="$(find ros_robot_pkg)/scripts/calibration_config.json"/>
+	<arg name="calibration_config" default="$(find aric_calibration)/scripts/calibration_config.json"/>
 	<!---=================================================================================================================================================================-->
 	<!-- load tool model -->
 	<!-- <param name="robot_description" command="$(find xacro)/xacro '$(find ros_robot_pkg)/xacros/inspection_debur.urdf.xacro'" /> -->
-	<param name="robot_description" command="$(find xacro)/xacro '$(find ros_robot_pkg)/xacros/tactile_ov7521.urdf.xacro'" />
+	<param name="robot_description" command="$(find xacro)/xacro '$(find aric_calibration)/xacros/osama_end_effector.urdf.xacro'" />
 	<!-- <param name="robot_description" command="$(find xacro)/xacro '$(find ros_robot_pkg)/xacros/debur_with_full_tactile.urdf.xacro'" /> -->
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
 
 	<!---=================================================================================================================================================================-->
 	<!-- Robot Calibration Node -->
-    <node pkg="ros_robot_pkg" type="test2.py" name="camera_calibration" output="screen" cwd="node">
+    <node pkg="aric_calibration" type="test2.py" name="camera_calibration" output="screen" cwd="node">
 		<param name="calibration_config" value="$(arg calibration_config)"/>
     </node>
 

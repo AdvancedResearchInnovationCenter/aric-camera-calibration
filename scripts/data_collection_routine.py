@@ -260,12 +260,12 @@ class CameraCalibrationDataCollection:
         ros_image = rospy.wait_for_message(self.ros_image_topic, Image)
         cv_image = self.cv_bridge.imgmsg_to_cv2(ros_image)
         info = self.get_image_info(cv_image)
-        # print(info)
+        print(info)
         
         if info['mode'] == 'L':
             gray_cv_image = cv_image
             # rgb_cv_image = cv2.cvtColor(cv_image, cv2.COLOR_GRAY2RGB)
-        elif info['mode'] == 'RGB':
+        elif 'RGB' in info['mode']:
             # rgb_cv_image = cv_image
             gray_cv_image = cv2.cvtColor(cv_image, cv2.COLOR_RGB2GRAY)
         
