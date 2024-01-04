@@ -21,7 +21,7 @@ class CameraCalibrator:
                         )
                     ).resolve()
                 )
-        
+
     def json_file_to_dict(self, json_file: str) -> dict:
         if not json_file.endswith('.json'):
             json_file += '.json'
@@ -30,9 +30,9 @@ class CameraCalibrator:
                 return json.load(inputfile)
         except Exception as e:
             print(e)
-            print(RED + "Error: Config file '" + json_file + "' not found." + RST)
+            print(RED + "Error: Config txt_file '" + json_file + "' not found." + RST)
             exit()
-      
+
     def __init__(self, calibration_config: dict):
         # read json_config
         self.calibration_config = calibration_config
@@ -110,7 +110,8 @@ class CameraCalibrator:
         self.base_T_tcp = []
         self.tcp_T_cam = []
         self.calibration_results = None
-        self.calibration_results_dir = str(pathlib.Path(os.path.join(self.datadir, '..', 'calibration_results.txt')).resolve())
+        self.calibration_results_txt  = str(pathlib.Path(os.path.join(self.datadir, '..', 'calibration_results.txt' )).resolve())
+        self.calibration_results_json = str(pathlib.Path(os.path.join(self.datadir, '..', 'calibration_results.json')).resolve())
         
     def read_charuco_board(self):
         """
@@ -208,21 +209,20 @@ class CameraCalibrator:
         print("  " + str([c[0].tolist() for c in self.distortion_coefficients]))
         print()
         
-        with open(self.calibration_results_dir, 'w') as file:
-            file.write("\n")
-            file.write("+------------------------------+\n")
-            file.write("| INTRINSIC CAMERA CALIBRATION |\n")
-            file.write("+------------------------------+\n")
-            file.write(f"* Reprojection Error: {self.reprojection_error}\n")
-            file.write("* Camera Matrix\n")
-            file.write(f"  {self.camera_matrix[0]}\n")
-            file.write(f"  {self.camera_matrix[1]}\n")
-            file.write(f"  {self.camera_matrix[2]}\n")
-            file.write("* Distortion Coefficients\n")
-            file.write("  " + str([c[0].tolist() for c in self.distortion_coefficients]))
-            file.write("\n")
-            
-        
+        with open(self.calibration_results_txt, 'w') as txt_file:
+            txt_file.write("\n")
+            txt_file.write("+------------------------------+\n")
+            txt_file.write("| INTRINSIC CAMERA CALIBRATION |\n")
+            txt_file.write("+------------------------------+\n")
+            txt_file.write(f"* Reprojection Error: {self.reprojection_error}\n")
+            txt_file.write("* Camera Matrix\n")
+            txt_file.write(f"  {self.camera_matrix[0]}\n")
+            txt_file.write(f"  {self.camera_matrix[1]}\n")
+            txt_file.write(f"  {self.camera_matrix[2]}\n")
+            txt_file.write("* Distortion Coefficients\n")
+            txt_file.write("  " + str([c[0].tolist() for c in self.distortion_coefficients]))
+            txt_file.write("\n")
+      
     def my_estimatePoseSingleMarkers(self, corners, marker_length, mtx, distortion):
         """
         NOT USEDDDD!!
@@ -287,7 +287,7 @@ class CameraCalibrator:
                 self.cam_T_target.append(np.vstack([np.c_[matrix_cam_board, p_cam_board], [0, 0, 0, 1]]))
             # print(f'# of cam_T_target Poses: {len(self.cam_T_target)}')
         # print()
-        
+
     def get_base_T_tcp_poses(self):
         # print(BLU + "GETTING base_T_tcp POSES" + RST)
         self.base_T_tcp = []
@@ -425,7 +425,14 @@ class CameraCalibrator:
 
                 # print("calibrarion Done")
                 # print(H_CT)
-        return H_CT
+        return H_CT, H_AB
+
+    def objective_function(self):
+        # self.base_T_tcp_arr = self.base_T_tcp
+        # self.cam_T_target_arr = self.cam_T_target
+        # LHS = self.base_T_tcp_arr @ self.
+        
+        return
 
     def calibrate_camera_extrinsics(self, method = 'ARIC'):
         self.get_cam_T_target_poses()
@@ -441,7 +448,7 @@ class CameraCalibrator:
                                        [ 0,  0, 1]])
             initial_transformation = np.vstack([np.c_[initial_matrix, initial_translation], [0, 0, 0, 1]])
 
-            self.tcp_T_cam = self.solveTransformation(self.base_T_tcp, self.cam_T_target, initial_transformation)
+            self.tcp_T_cam, self.base_T_target = self.solveTransformation(self.base_T_tcp, self.cam_T_target, initial_transformation)
         elif method == 'OPENCV':
             R_C = []
             t_C = []
@@ -458,43 +465,98 @@ class CameraCalibrator:
             t_B = np.array(t_B)
             rotation_mat, translation_vec = cv2.calibrateHandEye(R_B, t_B, R_C, t_C)
             self.tcp_T_cam = np.vstack([np.c_[rotation_mat, translation_vec], [0, 0, 0, 1]])
-
+        # tcp_T_cam
         print(f'* {GRN}tcp_T_cam{RST}')
         print(f'  {self.tcp_T_cam[0]}')
         print(f'  {self.tcp_T_cam[1]}')
         print(f'  {self.tcp_T_cam[2]}')
         print(f'  {self.tcp_T_cam[3]}')
-        rot_mat = self.tcp_T_cam[0:3,0:3]
-        translation = self.tcp_T_cam[0:3,3]
-        r =  Rotation.from_matrix(rot_mat)
-        angles = r.as_euler('xyz')#, degrees=True)
-        angles_degrees = r.as_euler('xyz', degrees=True)
+        rot_mat_cam_to_tcp = self.tcp_T_cam[0:3,0:3]
+        translation_cam_to_tcp = self.tcp_T_cam[0:3,3]
+        r_cam_to_tcp =  Rotation.from_matrix(rot_mat_cam_to_tcp)
+        angles_cam_to_tcp = r_cam_to_tcp.as_euler('xyz')#, degrees=True)
+        angles_degrees_cam_to_tcp = r_cam_to_tcp.as_euler('xyz', degrees=True)
         # xyz -> sequence of output
 
         # print("Rotation Matrix")
         # print(rot_mat)
         print()
         print(f'* {GRN}Translation{RST}')
-        print("  " + str(translation))
+        print("  " + str(translation_cam_to_tcp))
         print()
         print(f'* {GRN}Euler Angles (ZYX){RST}')
-        print(f'  {YLW}(rad){RST} {BLD}X: {RST}{angles[0]}\t{BLD}Y: {RST}{angles[1]}\t{BLD}Z: {RST}{angles[2]}{RST}')
-        print(f'  {YLW}(deg){RST} {BLD}X: {RST}{angles_degrees[0]}\t{BLD}Y: {RST}{angles_degrees[1]}\t{BLD}Z: {RST}{angles_degrees[2]}{RST}')
+        print(f'  {YLW}(rad){RST} {BLD}X: {RST}{angles_cam_to_tcp[0]}\t{BLD}Y: {RST}{angles_cam_to_tcp[1]}\t{BLD}Z: {RST}{angles_cam_to_tcp[2]}{RST}')
+        print(f'  {YLW}(deg){RST} {BLD}X: {RST}{angles_degrees_cam_to_tcp[0]}\t{BLD}Y: {RST}{angles_degrees_cam_to_tcp[1]}\t{BLD}Z: {RST}{angles_degrees_cam_to_tcp[2]}{RST}')
         print()
 
-        with open(self.calibration_results_dir, 'a') as file:
-            file.write("\n")
-            file.write("+------------------------------+\n")
-            file.write("| EXTRINSIC CAMERA CALIBRATION |\n")
-            file.write("+------------------------------+\n")
-            file.write("* tcp_T_cam\n")
-            file.write(f'  {self.tcp_T_cam[0]}\n')
-            file.write(f'  {self.tcp_T_cam[1]}\n')
-            file.write(f'  {self.tcp_T_cam[2]}\n')
-            file.write(f'  {self.tcp_T_cam[3]}\n')
-            file.write("* Translation\n")
-            file.write("  " + str(translation) + '\n')
-            file.write(f'* Euler Angles (ZYX)\n')
-            file.write(f'  (rad) X: {angles[0]}\tY: {angles[1]}\tZ: {angles[2]}\n')
-            file.write(f'  (deg) X: {angles_degrees[0]}\tY: {angles_degrees[1]}\tZ: {angles_degrees[2]}\n')
+        # base_T_target
+        print(f'* {GRN}base_T_target{RST}')
+        print(f'  {self.base_T_target[0]}')
+        print(f'  {self.base_T_target[1]}')
+        print(f'  {self.base_T_target[2]}')
+        print(f'  {self.base_T_target[3]}')
+        rot_mat_target_to_base = self.base_T_target[0:3,0:3]
+        translation_target_to_base = self.base_T_target[0:3,3]
+        r_target_to_base =  Rotation.from_matrix(rot_mat_target_to_base)
+        angles_target_to_base = r_target_to_base.as_euler('xyz')#, degrees=True)
+        angles_degrees_target_to_base = r_target_to_base.as_euler('xyz', degrees=True)
+        # xyz -> sequence of output
+
+        # print("Rotation Matrix")
+        # print(rot_mat)
+        print()
+        print(f'* {GRN}Translation{RST}')
+        print("  " + str(translation_target_to_base))
+        print()
+        print(f'* {GRN}Euler Angles (ZYX){RST}')
+        print(f'  {YLW}(rad){RST} {BLD}X: {RST}{angles_target_to_base[0]}\t{BLD}Y: {RST}{angles_target_to_base[1]}\t{BLD}Z: {RST}{angles_target_to_base[2]}{RST}')
+        print(f'  {YLW}(deg){RST} {BLD}X: {RST}{angles_degrees_target_to_base[0]}\t{BLD}Y: {RST}{angles_degrees_target_to_base[1]}\t{BLD}Z: {RST}{angles_degrees_target_to_base[2]}{RST}')
+        print()
+
+        with open(self.calibration_results_txt, 'a') as txt_file:
+            txt_file.write("\n")
+            txt_file.write("+------------------------------+\n")
+            txt_file.write("| EXTRINSIC CAMERA CALIBRATION |\n")
+            txt_file.write("+------------------------------+\n")
+            txt_file.write("* tcp_T_cam\n")
+            txt_file.write(f'  {self.tcp_T_cam[0]}\n')
+            txt_file.write(f'  {self.tcp_T_cam[1]}\n')
+            txt_file.write(f'  {self.tcp_T_cam[2]}\n')
+            txt_file.write(f'  {self.tcp_T_cam[3]}\n')
+            txt_file.write("* Translation\n")
+            txt_file.write("  " + str(translation_cam_to_tcp) + '\n')
+            txt_file.write(f'* Euler Angles (ZYX)\n')
+            txt_file.write(f'  (rad) X: {angles_cam_to_tcp[0]}\tY: {angles_cam_to_tcp[1]}\tZ: {angles_cam_to_tcp[2]}\n')
+            txt_file.write(f'  (deg) X: {angles_degrees_cam_to_tcp[0]}\tY: {angles_degrees_cam_to_tcp[1]}\tZ: {angles_degrees_cam_to_tcp[2]}\n')
+            
+            txt_file.write("* base_T_target\n")
+            txt_file.write(f'  {self.base_T_target[0]}\n')
+            txt_file.write(f'  {self.base_T_target[1]}\n')
+            txt_file.write(f'  {self.base_T_target[2]}\n')
+            txt_file.write(f'  {self.base_T_target[3]}\n')
+            txt_file.write("* Translation\n")
+            txt_file.write("  " + str(translation_target_to_base) + '\n')
+            txt_file.write(f'* Euler Angles (ZYX)\n')
+            txt_file.write(f'  (rad) X: {angles_target_to_base[0]}\tY: {angles_target_to_base[1]}\tZ: {angles_target_to_base[2]}\n')
+            txt_file.write(f'  (deg) X: {angles_degrees_target_to_base[0]}\tY: {angles_degrees_target_to_base[1]}\tZ: {angles_degrees_target_to_base[2]}\n')
         
+        results_dict = {'camera_matrix': self.camera_matrix.tolist(),
+                        'distortion_coeffs': self.distortion_coefficients.tolist(),
+                        'tcp_T_cam': {
+                            'T': self.tcp_T_cam.tolist(),
+                            'translation_vec': translation_cam_to_tcp.tolist(),
+                            'rotation_mat': rot_mat_cam_to_tcp.tolist(),
+                            'euler_angles_rad': angles_cam_to_tcp.tolist(),
+                            'euler_angles_deg': angles_degrees_cam_to_tcp.tolist()
+                            },
+                        'base_T_target':{
+                            'T': self.base_T_target.tolist(),
+                            'translation_vec': translation_target_to_base.tolist(),
+                            'rotation_mat': rot_mat_target_to_base.tolist(),
+                            'euler_angles_rad': angles_target_to_base.tolist(),
+                            'euler_angles_deg': angles_degrees_target_to_base.tolist()
+                        }
+                    }
+        
+        with open(self.calibration_results_json, 'w') as json_file:
+            json.dump(results_dict, fp=json_file, ensure_ascii=True, indent=4)
