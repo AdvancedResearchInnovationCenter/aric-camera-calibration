@@ -10,7 +10,7 @@
 
 	<!---=================================================================================================================================================================-->
 	<!-- Robot Calibration Node -->
-    <node pkg="ros_robot_pkg" type="test2.py" name="camera_calibration" output="screen" cwd="node">
+    <node pkg="ros_robot_pkg" type="main.py" name="camera_calibration" output="screen" cwd="node">
 		<param name="calibration_config" value="$(arg calibration_config)"/>
     </node>
 

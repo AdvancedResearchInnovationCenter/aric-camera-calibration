@@ -8,6 +8,18 @@
 ## How to use
 1. Modify `calibration_config.json` as per your setup. (Currently, **ChAruCo board** is the only supported calibration target)
 2. Use `bringup_calibration.launch`
+3. Calibration data will be saved in a new directory:
+    ```
+    ros_robot
+      ├── CMakeLists.txt
+      ├── README.md
+      ├── calibration_data  <-- NEW DIRECTORY CREATED FOR YOUR CALIBRATION DATA
+      ├── launch
+      ├── package.xml
+      ├── scripts
+      ├── srv
+      └── xacros
+    ```
 
 ## `calibration_config.json`
 ```json
