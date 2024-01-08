@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import json
 import os
 from aric_camera_calibration import CameraCalibrator
 from data_collection_routine import CameraCalibrationDataCollection
@@ -7,7 +8,6 @@ import _thread
 import rospy
 
 if __name__ == '__main__':
-    
     calibration_config_file = rospy.get_param('/camera_calibration/calibration_config')
     data_collector = CameraCalibrationDataCollection(calibration_config_file)
     if not data_collector.use_existing_data:

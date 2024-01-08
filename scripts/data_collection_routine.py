@@ -121,19 +121,6 @@ class CameraCalibrationDataCollection:
         ## LOAD CALIBRATION CONFIGURATION DATA
         self.calibration_config = self.load_calibration_config(calibration_config_file)
         
-        # exit()
-        if self.robot_name == 'UR10':
-            self.robot = RosRobot(UrRtde(self.robot_ip))
-        elif self.robot_name == 'ABB':
-            self.robot = RosRobot(AbbRobot(self.robot_ip))
-        elif self.robot_name == 'Mitsubishi':
-            #TODO: Add support for mitsubishi robot
-            print('self.robot = RosRobot(MitsubishiRobot(self.robot_ip))')
-            pass
-        else:
-            print("No robot selected. Exiting...")
-            exit()
-        
         self.cv_bridge = CvBridge()
         self.image_markers_publisher = rospy.Publisher(
             'markers_image', Image, queue_size=1)
@@ -194,7 +181,22 @@ class CameraCalibrationDataCollection:
         # self.calibration_data_dir_relative = os.path.join(os.path.dirname(__file__), self.calibration_data_dir_relative)
         self.calibration_poses = []  # camera poses relative to aruco board
         self.setup_calibration_poses()
-
+        
+        if self.use_existing_data:
+            return
+        
+        if self.robot_name == 'UR10':
+            self.robot = RosRobot(UrRtde(self.robot_ip))
+        elif self.robot_name == 'ABB':
+            self.robot = RosRobot(AbbRobot(self.robot_ip))
+        elif self.robot_name == 'Mitsubishi':
+            #TODO: Add support for mitsubishi robot
+            print('self.robot = RosRobot(MitsubishiRobot(self.robot_ip))')
+            pass
+        else:
+            print("No robot selected. Exiting...")
+            exit()
+        
     def save_to_json_file(self, data_object, file_name: str):
         if not file_name.endswith('.json'):
             file_name = file_name + '.json'
