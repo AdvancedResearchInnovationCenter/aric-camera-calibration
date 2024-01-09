@@ -10,7 +10,7 @@
 
 	<!---=================================================================================================================================================================-->
 	<!-- Robot Calibration Node -->
-    <node pkg="aric_calibration" type="test2.py" name="camera_calibration" output="screen" cwd="node">
+    <node pkg="aric_calibration" type="main.py" name="camera_calibration" output="screen" cwd="node">
 		<param name="calibration_config" value="$(arg calibration_config)"/>
     </node>
 
