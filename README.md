@@ -9,9 +9,10 @@
 
 ## How to use
 
-1. Modify `calibration_config.json` as per your setup. (Currently, **ChAruCo board** is the only supported calibration target)
-2. Use `bringup_calibration.launch`
-3. Calibration data will be saved in a new directory:
+1. Generate `calibration_config.json` as per your setup. Follow `sample_calibration_config.json` for guidance. (Currently, **ChAruCo board** is the only supported calibration target)
+2. Generate a `tool.urdf.xacro` as per your tool. Follow `sample_tool.urdf.xacro` for gu
+3. Use `bringup_calibration.launch`
+4. Calibration data will be saved in a new directory:
    ```
    ros_robot
      ├── CMakeLists.txt
@@ -24,7 +25,7 @@
      └── xacros
    ```
 
-## `calibration_config.json`
+## example `calibration_config.json `
 
 ```json
 {

@@ -3,18 +3,11 @@
 
 	<!---=================================================================================================================================================================-->
 	<!-- load tool model -->
-	<!-- <param name="robot_description" command="$(find xacro)/xacro '$(find ros_robot_pkg)/xacros/blade_sorting_inspection_project.urdf.xacro'" /> -->
-	<!-- <param name="robot_description" command="$(find xacro)/xacro '$(find ros_robot_pkg)/xacros/ids_priscilla_calibration.urdf.xacro'" /> -->
-	<param name="robot_description" command="$(find xacro)/xacro '$(find ros_robot_pkg)/xacros/tactile_ov7521.urdf.xacro'" />
+	<param name="robot_description" command="$(find xacro)/xacro '$(find aric_calibration)/xacros/sample_tool.urdf.xacro'" />
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
 
-	<!-- <param name="rs_description" command="$(find xacro)/xacro  -inorder '$(find realsense2_description)/urdf/test_d435_camera.urdf.xacro' use_nominal_extrinsics:=false"/> -->
-  	<!-- <node name="robot_state_publisher_rs" pkg="robot_state_publisher" type="robot_state_publisher" args="robot_description:=rs_description"/> -->
-	
 	<!---=================================================================================================================================================================-->
 	<!-- Robot Node -->
-    <node pkg="ros_robot_pkg" type="ros_robot.py" name="ros_robot"  output="screen"/>
-    <!-- <node pkg="d435_calib" type="data_collection.py" name="ros_robot_interface"  output="screen"/> -->
-    
+    <node pkg="aric_calibration" type="ros_robot.py" name="ros_robot"  output="screen"/>    
 	
 </launch>
