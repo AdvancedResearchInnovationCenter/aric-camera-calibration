@@ -262,7 +262,7 @@ class CameraCalibrationDataCollection:
         ros_image = rospy.wait_for_message(self.ros_image_topic, Image)
         cv_image = self.cv_bridge.imgmsg_to_cv2(ros_image)
         info = self.get_image_info(cv_image)
-        print(info)
+        # print(info)
         
         if info['mode'] == 'L':
             gray_cv_image = cv_image
@@ -332,7 +332,8 @@ class CameraCalibrationDataCollection:
 
         print(f'# of poses: {len(self.calibration_poses)}')
         # start routine
-        for target_pose in self.calibration_poses:
+        from tqdm.auto import tqdm
+        for target_pose in tqdm(self.calibration_poses, desc='Collecting images...'):
             # round
             for i in range(target_pose.shape[0]):
                 for j in range(target_pose.shape[1]):
