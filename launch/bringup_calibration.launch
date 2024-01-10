@@ -4,8 +4,8 @@
 	<!---=================================================================================================================================================================-->
 	<!-- load tool model -->
 	<!-- <param name="robot_description" command="$(find xacro)/xacro '$(find ros_robot_pkg)/xacros/inspection_debur.urdf.xacro'" /> -->
-	<param name="robot_description" command="$(find xacro)/xacro '$(find aric_calibration)/xacros/osama_end_effector.urdf.xacro'" />
-	<!-- <param name="robot_description" command="$(find xacro)/xacro '$(find ros_robot_pkg)/xacros/debur_with_full_tactile.urdf.xacro'" /> -->
+	<!-- <param name="robot_description" command="$(find xacro)/xacro '$(find aric_calibration)/xacros/osama_end_effector.urdf.xacro'" /> -->
+	<param name="robot_description" command="$(find xacro)/xacro '$(find aric_calibration)/xacros/debur_with_full_tactile.urdf.xacro'" />
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
 
 	<!---=================================================================================================================================================================-->
