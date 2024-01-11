@@ -43,16 +43,27 @@ class CameraCalibrationDataCollection:
         self.robot_ip = self.calibration_config['robot']['ip']
 
         ## CALIBRATION TARGET DATA
-        self.target_type = self.calibration_config['calibration_target']['type']
-        self.target_size = (self.calibration_config['calibration_target']['size'][0], 
-                            self.calibration_config['calibration_target']['size'][1])
-        self.checker_length = self.calibration_config['calibration_target']['checker_length']
-        self.marker_length = self.calibration_config['calibration_target']['marker_length']
-        self.legacy_pattern = self.calibration_config['calibration_target']['legacy_pattern']
-        self.blur = self.calibration_config['calibration_target']['blur']
-        self.base_T_target = self.calibration_config['calibration_target']['target2base']
-        self.target_aruco_dict = ARUCO_DICT[self.calibration_config['calibration_target']['aruco_dict']]
-        
+        # allowing this to be more flexible for different targets
+        # TODO: ugly code, needs to be cleaned up
+        calib_target_keys = []
+        for key in self.calibration_config['calibration_target']:
+            if key == 'type':
+                calib_target_keys.append('target_type')
+                setattr(self, 'target_type', self.calibration_config['calibration_target'][key])
+            elif key == 'size':
+                calib_target_keys.append('target_size')
+                setattr(self, 'target_size', (self.calibration_config['calibration_target'][key][0], 
+                                              self.calibration_config['calibration_target'][key][1]))
+            elif key == 'target2base':
+                calib_target_keys.append('base_T_target')
+                setattr(self, 'base_T_target', self.calibration_config['calibration_target'][key])
+            elif key == 'aruco_dict':
+                self.target_aruco_dict = ARUCO_DICT[self.calibration_config['calibration_target'][key]]
+            else:
+                calib_target_keys.append(key)
+                setattr(self, key, self.calibration_config['calibration_target'][key])
+
+
         ## CALIBRATION DATA
         self.calibration_data_dir_relative = os.path.join(
             "../calibration_data", 
@@ -76,7 +87,8 @@ class CameraCalibrationDataCollection:
         if not os.path.exists(self.images_dir_abs):
             os.makedirs(self.images_dir_abs)
         
-        verbose = True
+        verbose = False 
+        #TODO: make this generalizable for different targets
         if verbose:
             print('--------------------------------------------------------')
             print(f'########  R O B O T   I N F O  ########')
@@ -138,12 +150,13 @@ class CameraCalibrationDataCollection:
                                                 0:self.checkerboard_dim[1]].T.reshape(-1, 2)
         elif self.target_type == 'aruco':
             # Aruco properties
-            self.aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_4X4_250)
-            self.aruco_size = 0.0075
+            self.aruco_dict = aruco.getPredefinedDictionary(self.target_aruco_dict)
             self.aruco_params = aruco.DetectorParameters()
             self.aruco_params.cornerRefinementMethod = aruco.CORNER_REFINE_SUBPIX
             self.aruco_params.cornerRefinementMinAccuracy = 0.0001
             self.aruco_params.cornerRefinementMaxIterations = 10000
+            self.detector = cv2.aruco.ArucoDetector(self.aruco_dict)
+
 
         elif self.target_type == 'charuco':
             # Charuco properties
@@ -168,6 +181,7 @@ class CameraCalibrationDataCollection:
                 detectorParams=self.aruco_params,
                 refineParams=self.refine_params,
             )
+            
         self.data_counter = 0
 
         self.max_angle = self.data_collection_setup[0]
@@ -276,16 +290,16 @@ class CameraCalibrationDataCollection:
         
         return blur_rgb_ros_image, blur_gray_cv_image
 
+    def draw_and_publish_markers(self, rgb_ros_image, markerCorners, markerIds):
+        markers_cv_image = aruco.drawDetectedMarkers(
+            image=self.cv_bridge.imgmsg_to_cv2(rgb_ros_image),
+            corners=markerCorners,
+            ids=markerIds,
+            borderColor=(0, 255, 0))
+        self.image_markers_publisher.publish(self.cv_bridge.cv2_to_imgmsg(markers_cv_image, encoding="rgb8"))
+
     def getChArucoMarkers(self, rgb_ros_image: Image, gray_cv_image: np.ndarray):
         charucoCorners = charucoIds = markerCorners = markerIds = []
-        
-        def draw_and_publish_markers(rgb_ros_image, markerCorners, markerIds):
-            markers_cv_image = aruco.drawDetectedMarkers(
-                image=self.cv_bridge.imgmsg_to_cv2(rgb_ros_image),
-                corners=markerCorners,
-                ids=markerIds,
-                borderColor=(0, 255, 0))
-            self.image_markers_publisher.publish(self.cv_bridge.cv2_to_imgmsg(markers_cv_image, encoding="rgb8"))
         
         while len(markerIds) < 6 or markerIds is None:
             (charucoCorners,
@@ -300,7 +314,7 @@ class CameraCalibrationDataCollection:
                 continue
 
             if len(markerIds) < 6:
-                draw_and_publish_markers(rgb_ros_image, markerCorners, markerIds)
+                self.draw_and_publish_markers(rgb_ros_image, markerCorners, markerIds)
                 rgb_ros_image, gray_cv_image = self.getRosImage()
                 input('\033[33mFound {} aruco(s), update ur pose manually and try again.\033[0m'.format(
                     len(markerIds)))
@@ -312,9 +326,37 @@ class CameraCalibrationDataCollection:
         # Outline the aruco markers found in our query image
         # print(markerIds)
         # print(f'# of markers: {len(markerIds)}')
-        draw_and_publish_markers(rgb_ros_image, markerCorners, markerIds)
+        self.draw_and_publish_markers(rgb_ros_image, markerCorners, markerIds)
         
         return gray_cv_image
+    
+    def getArucoMarkers(self, rgb_ros_image: Image, gray_cv_image: np.ndarray):
+        markerCorners = markerIds = []
+        while len(markerIds) < 1 or markerIds is None:
+            (markerCorners,
+             markerIds,
+             rejectedImgPoints
+             ) = self.detector.detectMarkers(image=gray_cv_image)
+
+            if markerIds is None:
+
+                rgb_ros_image, gray_cv_image = self.getRosImage()
+                markerCorners = markerIds = []
+                continue
+
+            if markerIds is not None and len(markerIds) > 0:
+                print('y')
+                # marker_index = 0     
+                # rvec, tvec, _ = aruco.estimatePoseSingleMarkers(corners[marker_index], 0.05, camera_matrix, dist_coeffs)
+                # # viz
+                # cv2.drawFrameAxes( frame, camera_matrix, dist_coeffs, rvec, tvec, length=0.03 )
+
+                self.draw_and_publish_markers(rgb_ros_image, markerCorners, markerIds)
+            elif len(rejectedImgPoints) > 0:
+                print('found Aruco but rejected. Check params')
+        
+        return gray_cv_image
+
 
     def getEEPose(self):
         robot_pose = self.robot.robot_controller.get_pose()
@@ -354,9 +396,12 @@ class CameraCalibrationDataCollection:
             # rospy.sleep(0.2)
 
             rgb_ros_image, gray_cv_image = self.getRosImage()
-            gray_cv_image = self.getChArucoMarkers(
+
+            # gray_cv_image = self.getChArucoMarkers(
+            #     rgb_ros_image, gray_cv_image)
+
+            gray_cv_image = self.fetch_target_func()(
                 rgb_ros_image, gray_cv_image)
-            
             
             current_EE_tvec, current_EE_rot = self.getEEPose()
             current_ee_transformation = np.vstack(
@@ -379,6 +424,16 @@ class CameraCalibrationDataCollection:
         if len(self.calibration_data_list) == len(self.calibration_poses):
             self.data_collected = True
             # self.save_to_json_file(self.calibration_config, "calibration_config_updated.json")
+
+    
+
+    def fetch_target_func(self):
+        if self.target_type == "charuco":
+            return self.getChArucoMarkers
+        elif self.target_type == "aruco":
+            return self.getArucoMarkers
+        
+            
 
 
     # def cleanup(self):
