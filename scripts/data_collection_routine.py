@@ -412,15 +412,12 @@ class CameraCalibrationDataCollection:
             self.robot.set_TCP('davis')
             pose_msg = self.robot.kinematics.transformation_matrix_to_pose(
                 base_to_target)
-            if self.robot.move_to_pose(pose_msg):
-            # rospy.sleep(0.2)
-
+            if not self.robot.move_to_pose(pose_msg):
+                print("failed to go to pose.")
+                continue
+            else:
                 rgb_ros_image, gray_cv_image = self.getRosImage()
-
-                # gray_cv_image = self.getChArucoMarkers(
-            #     rgb_ros_image, gray_cv_image)
-
-                gray_cv_image = self.fetch_target_func()(
+                gray_cv_image = self.fetch_target()(
                     rgb_ros_image, gray_cv_image)
                 
                 current_EE_tvec, current_EE_rot = self.getEEPose()
@@ -439,17 +436,12 @@ class CameraCalibrationDataCollection:
                 self.save_image(image_name, gray_cv_image)
                 self.save_to_json_file(self.calibration_data_list, self.dump_file_name)
                 self.data_counter += 1
-            else:
-                continue
-            # input("continue")
-        
+            
         if len(self.calibration_data_list) == self.data_counter:
             self.data_collected = True
             # self.save_to_json_file(self.calibration_config, "calibration_config_updated.json")
 
-    
-
-    def fetch_target_func(self):
+    def fetch_target(self):
         if self.target_type == "charuco":
             return self.getChArucoMarkers
         elif self.target_type == "aruco":

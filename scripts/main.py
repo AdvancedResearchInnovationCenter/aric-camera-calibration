@@ -11,9 +11,7 @@ if __name__ == '__main__':
     calibration_config_file = rospy.get_param('/camera_calibration/calibration_config')
     data_collector = CameraCalibrationDataCollection(calibration_config_file)
     if not data_collector.use_existing_data:
-        print(1)
         _thread.start_new_thread(data_collector.robot.run_node, ())
-        print(2)
         _thread.start_new_thread(data_collector.collect_data, ())
 
     while not rospy.is_shutdown():

@@ -10,7 +10,7 @@ from std_msgs.msg import Float64, Bool
 from std_srvs.srv import Empty
 import tf2_ros
 import datetime
-from ros_robot_pkg.srv import moveRobot, desiredTCP, pegHole, setValue, moveRobotRelative
+from aric_calibration.srv import moveRobot, desiredTCP, pegHole, setValue, moveRobotRelative
 from scipy.spatial.transform import Rotation as R
 from kinematics import RobotKinematics
 import time
