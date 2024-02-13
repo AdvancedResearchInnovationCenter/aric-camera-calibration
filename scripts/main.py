@@ -16,7 +16,10 @@ if __name__ == '__main__':
 
     while not rospy.is_shutdown():
         if data_collector.data_collected:
+            if data_collector.calibration_config['calibration_target']['type'] == 'aruco':
+                raise NotImplementedError('Aruco calibration not implemented yet. Only collecting data is implemented.')
             # robot.cleanup()
+            # print(data_collector.calibration_config)
             calibrator = CameraCalibrator(data_collector.calibration_config)
             calibrator.calibrate_camera_intrinsics()
             calibrator.calibrate_camera_extrinsics()

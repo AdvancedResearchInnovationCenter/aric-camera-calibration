@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 """
 This script includes a class to methods for the interface between ROS and various robot control packages 
 """
@@ -10,7 +10,7 @@ from std_msgs.msg import Float64, Bool
 from std_srvs.srv import Empty
 import tf2_ros
 import datetime
-from aric_calibration.srv import moveRobot, desiredTCP, pegHole, setValue, moveRobotRelative
+from ros_robot_pkg.srv import moveRobot, desiredTCP, pegHole, setValue, moveRobotRelative
 from scipy.spatial.transform import Rotation as R
 from kinematics import RobotKinematics
 import time
@@ -18,6 +18,7 @@ import copy
 from ur_rtde import UrRtde
 import _thread
 from abb_ros import AbbRobot
+from mitsubishi_ros import MitsubishiRobot
 import sys
 
 #Deburring end effector
@@ -94,9 +95,13 @@ class RosRobot:
     This is a class for ROS interface with robot controllers
     """
     def __init__(self, robot_controller):
-        self.vel = 0.5
-        self.acc = 0.5
-        self.stop_acc = 0.3
+        # self.vel = 0.1
+        # self.acc = 0.1
+        # self.stop_acc = 0.3
+        
+        self.vel = 0.15
+        self.acc = 0.15
+        self.stop_acc = 0.1
 
         self.cmd_velocity_vector = []
         self.move_vel = False
@@ -342,7 +347,6 @@ class RosRobot:
         time.sleep(1)
 
         while not rospy.is_shutdown():
-
             self.update_poses()
             self.pose_publisher.publish(self.robot_pose)
             self.cam_pose_publisher.publish(self.camera_pose)
@@ -712,8 +716,9 @@ class RosRobot:
 
     
 if __name__ == '__main__':
-    robot = UrRtde("192.168.50.110")
-    #robot = AbbRobot('192.168.125.1')
+    # robot = UrRtde("192.168.50.110")
+    # robot = AbbRobot('192.168.125.1')
+    robot = MitsubishiRobot('192.168.0.20')    
     ros_robot = RosRobot(robot)
     _thread.start_new_thread( ros_robot.run_node, () )
     _thread.start_new_thread( ros_robot.run_controller, () )
