@@ -18,7 +18,7 @@ from abb_ros import AbbRobot
 import random
 import copy
 from utils import *
-# from mitsubishi_ros import MitsubishiRobot
+from mitsubishi_ros import MitsubishiRobot
 import pathlib
 from PIL import Image as PIL_Image
 
@@ -190,8 +190,7 @@ class CameraCalibrationDataCollection:
         elif self.robot_name == 'ABB':
             self.robot = RosRobot(AbbRobot(self.robot_ip))
         elif self.robot_name == 'Mitsubishi':
-            #TODO: Add support for mitsubishi robot
-            print('self.robot = RosRobot(MitsubishiRobot(self.robot_ip))')
+            self.robot = RosRobot(MitsubishiRobot(self.robot_ip))
             pass
         else:
             print("No robot selected. Exiting...")
@@ -287,19 +286,19 @@ class CameraCalibrationDataCollection:
                 borderColor=(0, 255, 0))
             self.image_markers_publisher.publish(self.cv_bridge.cv2_to_imgmsg(markers_cv_image, encoding="rgb8"))
         
-        while len(markerIds) < 6 or markerIds is None:
+        while (len(markerIds) < 6 or markerIds is None) or (len(charucoIds) < 6 or charucoIds is None):
             (charucoCorners,
              charucoIds,
              markerCorners,
              markerIds
              ) = self.charuco_detector.detectBoard(image=gray_cv_image)
 
-            if markerIds is None:
+            if charucoIds is None or markerIds is None:
                 rgb_ros_image, gray_cv_image = self.getRosImage()
                 charucoCorners = charucoIds = markerCorners = markerIds = []
                 continue
 
-            if len(markerIds) < 6:
+            if len(charucoIds) < 6 or len(markerIds) < 6:
                 draw_and_publish_markers(rgb_ros_image, markerCorners, markerIds)
                 rgb_ros_image, gray_cv_image = self.getRosImage()
                 input('\033[33mFound {} aruco(s), update ur pose manually and try again.\033[0m'.format(
@@ -350,33 +349,35 @@ class CameraCalibrationDataCollection:
             self.robot.set_TCP('davis')
             pose_msg = self.robot.kinematics.transformation_matrix_to_pose(
                 base_to_target)
-            self.robot.move_to_pose(pose_msg)
+            if self.robot.move_to_pose(pose_msg):
             # rospy.sleep(0.2)
 
-            rgb_ros_image, gray_cv_image = self.getRosImage()
-            gray_cv_image = self.getChArucoMarkers(
-                rgb_ros_image, gray_cv_image)
-            
-            
-            current_EE_tvec, current_EE_rot = self.getEEPose()
-            current_ee_transformation = np.vstack(
-                [np.c_[current_EE_rot, current_EE_tvec.reshape(3, -1)], [0, 0, 0, 1]])
+                rgb_ros_image, gray_cv_image = self.getRosImage()
+                gray_cv_image = self.getChArucoMarkers(
+                    rgb_ros_image, gray_cv_image)
+                
+                
+                current_EE_tvec, current_EE_rot = self.getEEPose()
+                current_ee_transformation = np.vstack(
+                    [np.c_[current_EE_rot, current_EE_tvec.reshape(3, -1)], [0, 0, 0, 1]])
 
-            image_name = str(self.data_counter) + '.png'
+                image_name = str(self.data_counter) + '.png'
 
-            self.calibration_data_list.update(
-                {'data_sample_' + str(self.data_counter): {'ee_pose': current_ee_transformation.tolist(),
-                                                           'image': os.path.join(self.images_dir_relative,image_name)}
-                 }
-                )
+                self.calibration_data_list.update(
+                    {'data_sample_' + str(self.data_counter): {'ee_pose': current_ee_transformation.tolist(),
+                                                            'image': os.path.join(self.images_dir_relative,image_name)}
+                    }
+                    )
 
-            # self.calibration_data_list.update(dump_data)
-            self.save_image(image_name, gray_cv_image)
-            self.save_to_json_file(self.calibration_data_list, self.dump_file_name)
-            self.data_counter += 1
+                # self.calibration_data_list.update(dump_data)
+                self.save_image(image_name, gray_cv_image)
+                self.save_to_json_file(self.calibration_data_list, self.dump_file_name)
+                self.data_counter += 1
+            else:
+                continue
             # input("continue")
         
-        if len(self.calibration_data_list) == len(self.calibration_poses):
+        if len(self.calibration_data_list) == self.data_counter:
             self.data_collected = True
             # self.save_to_json_file(self.calibration_config, "calibration_config_updated.json")
 

@@ -3,3 +3,4 @@ calibration_data/
 .vscode
 *.json
 *.urdf.xacro
+*.old
