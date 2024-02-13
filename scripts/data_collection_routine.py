@@ -64,6 +64,27 @@ class CameraCalibrationDataCollection:
                 setattr(self, key, self.calibration_config['calibration_target'][key])
 
 
+        # allowing this to be more flexible for different targets
+        # TODO: ugly code, needs to be cleaned up
+        calib_target_keys = []
+        for key in self.calibration_config['calibration_target']:
+            if key == 'type':
+                calib_target_keys.append('target_type')
+                setattr(self, 'target_type', self.calibration_config['calibration_target'][key])
+            elif key == 'size':
+                calib_target_keys.append('target_size')
+                setattr(self, 'target_size', (self.calibration_config['calibration_target'][key][0], 
+                                              self.calibration_config['calibration_target'][key][1]))
+            elif key == 'target2base':
+                calib_target_keys.append('base_T_target')
+                setattr(self, 'base_T_target', self.calibration_config['calibration_target'][key])
+            elif key == 'aruco_dict':
+                self.target_aruco_dict = ARUCO_DICT[self.calibration_config['calibration_target'][key]]
+            else:
+                calib_target_keys.append(key)
+                setattr(self, key, self.calibration_config['calibration_target'][key])
+
+
         ## CALIBRATION DATA
         self.calibration_data_dir_relative = os.path.join(
             "../calibration_data", 
@@ -296,12 +317,11 @@ class CameraCalibrationDataCollection:
             ids=markerIds,
             borderColor=(0, 255, 0))
         self.image_markers_publisher.publish(self.cv_bridge.cv2_to_imgmsg(markers_cv_image, encoding="rgb8"))
-    
+
     def getChArucoMarkers(self, rgb_ros_image: Image, gray_cv_image: np.ndarray):
         charucoCorners = charucoIds = markerCorners = markerIds = []
         
-        
-        while (len(markerIds) < 6 or markerIds is None) or (len(charucoIds) < 6 or charucoIds is None):
+        while len(markerIds) < 6 or markerIds is None:
             (charucoCorners,
              charucoIds,
              markerCorners,
