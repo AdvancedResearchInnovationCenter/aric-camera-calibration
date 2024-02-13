@@ -51,7 +51,7 @@ class MITSUBISHI(object):
 
     def move_robot(self, pose): #pose in (x, y, z, r, p, y) format
         variable_command = "P1 = " + pose
-        # print(variable_command)
+        
         self.execute(variable_command)
 
         move_command = "MVS P1"

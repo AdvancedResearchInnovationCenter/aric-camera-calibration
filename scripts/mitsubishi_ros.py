@@ -126,10 +126,9 @@ class MitsubishiRobot(Robot):
         raise NotImplementedError
     
     def parse_msg(self, msg_string, variables=['X', 'Y', 'Z', 'A', 'B', 'C']):
-        msg_string = (msg_string)
-        # print(msg_string)
+        msg_string = str(msg_string)
         xx = msg_string[5:] #Remove 'QoK' parts from message
-        x_split = xx.split(';') 
+        x_split = xx.split(';')
         values = []
         for variable in variables:
             idx = x_split.index(variable)

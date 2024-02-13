@@ -356,6 +356,7 @@ class RosRobot:
             self.arm_force_publisher.publish(self.ur_force)
             
             self.rate.sleep()
+
         
         self.cleanup()
 
