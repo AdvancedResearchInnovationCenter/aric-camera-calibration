@@ -334,7 +334,7 @@ class CameraCalibrationDataCollection:
                 continue
 
             if len(charucoIds) < 6 or len(markerIds) < 6:
-                draw_and_publish_markers(rgb_ros_image, markerCorners, markerIds)
+                self.draw_and_publish_markers(rgb_ros_image, markerCorners, markerIds)
                 rgb_ros_image, gray_cv_image = self.getRosImage()
                 input('\033[33mFound {} aruco(s), update ur pose manually and try again.\033[0m'.format(
                     len(markerIds)))
