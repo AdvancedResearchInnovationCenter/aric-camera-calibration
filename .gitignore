@@ -4,3 +4,4 @@ calibration_data/
 *.json
 *.urdf.xacro
 *.old
+build/

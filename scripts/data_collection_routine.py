@@ -102,7 +102,8 @@ class CameraCalibrationDataCollection:
         self.calibration_config['calibration_data'].update({'data_relative_dir': self.calibration_data_dir_relative})
         self.images_dir_abs = os.path.join(self.calibration_data_dir_abs, "images")
         self.images_dir_relative = os.path.join(self.calibration_data_dir_relative, "images")
-        
+        self.manual = self.calibration_config['calibration_data']['manual_data_collection']
+
         if not os.path.exists(self.calibration_data_dir_abs):
             os.makedirs(self.calibration_data_dir_abs)
         
@@ -430,34 +431,42 @@ class CameraCalibrationDataCollection:
             self.robot.set_TCP('davis')
             pose_msg = self.robot.kinematics.transformation_matrix_to_pose(
                 base_to_target)
-            if not self.robot.move_to_pose(pose_msg):
-                print("failed to go to pose.")
-                continue
+            if self.manual:
+                input('\033[33mUpdate ur pose manually and press enter to continue.\033[0m')
             else:
-                rgb_ros_image, gray_cv_image = self.getRosImage()
-                gray_cv_image = self.fetch_target()(
-                    rgb_ros_image, gray_cv_image)
-                
-                current_EE_tvec, current_EE_rot = self.getEEPose()
-                current_ee_transformation = np.vstack(
-                    [np.c_[current_EE_rot, current_EE_tvec.reshape(3, -1)], [0, 0, 0, 1]])
+                go_to_pose_status = self.robot.move_to_pose(pose_msg)
+                if not go_to_pose_status:
+                    print("failed to go to pose.")
+                    # input('\033[33mUpdate ur pose manually and press enter to continue.\033[0m')
 
-                image_name = str(self.data_counter) + '.png'
-
-                self.calibration_data_list.update(
-                    {'data_sample_' + str(self.data_counter): {'ee_pose': current_ee_transformation.tolist(),
-                                                            'image': os.path.join(self.images_dir_relative,image_name)}
-                    }
-                    )
-
-                # self.calibration_data_list.update(dump_data)
-                self.save_image(image_name, gray_cv_image)
-                self.save_to_json_file(self.calibration_data_list, self.dump_file_name)
-                self.data_counter += 1
+            self.process_pose()
+            rospy.sleep(1)
             
         if len(self.calibration_data_list) == self.data_counter:
             self.data_collected = True
             # self.save_to_json_file(self.calibration_config, "calibration_config_updated.json")
+
+    def process_pose(self):
+        rgb_ros_image, gray_cv_image = self.getRosImage()
+        gray_cv_image = self.fetch_target()(
+            rgb_ros_image, gray_cv_image)
+        
+        current_EE_tvec, current_EE_rot = self.getEEPose()
+        current_ee_transformation = np.vstack(
+            [np.c_[current_EE_rot, current_EE_tvec.reshape(3, -1)], [0, 0, 0, 1]])
+
+        image_name = str(self.data_counter) + '.png'
+
+        self.calibration_data_list.update(
+            {'data_sample_' + str(self.data_counter): {'ee_pose': current_ee_transformation.tolist(),
+                                                    'image': os.path.join(self.images_dir_relative,image_name)}
+            }
+            )
+
+        # self.calibration_data_list.update(dump_data)
+        self.save_image(image_name, gray_cv_image)
+        self.save_to_json_file(self.calibration_data_list, self.dump_file_name)
+        self.data_counter += 1
 
     def fetch_target(self):
         if self.target_type == "charuco":

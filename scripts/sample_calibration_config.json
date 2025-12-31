@@ -21,6 +21,7 @@
         "image_topic": "<image_topic>",
         "data_collection_setup": [0.4, 5, 20, 0.15, 0.20],
         "output_file_name": "<output_file_name>",
-        "use_existing_data": false
+        "use_existing_data": false,
+        "manual_data_collection": false
     }
 }

@@ -89,6 +89,7 @@ Info about the output calibration data
 | `image_topic`           | Inbound image stream              | _e.g._ "/image/raw"                                                                                      | string                          | The input `image_topic` will be subscribed to                                                   |
 | `data_collection_setup` | Random pose generation parameters | [$`\phi`$, n_cycle, n_pose_per_cycle, min_radius, max_radius] `<br>` _e.g._ [0.4, 5, 20, 0.10, 0.15] | [float, int, int, float, float] |                                                                                                   |
 | `output_file_name`      | Pose-image pairs data JSON file   | _e.g._ "D435_calibration_2nd.json"                                                                       | string                          |                                                                                                   |
+| `manual_data_collection`| Collect data manually             | false. true                                                                                              | bool                            |
 
 ## Sample Output
 
